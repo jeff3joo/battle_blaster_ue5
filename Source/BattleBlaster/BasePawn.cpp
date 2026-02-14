@@ -25,7 +25,7 @@ ABasePawn::ABasePawn()
 
 }
 
-void ABasePawn::RotateTurret(FVector LookAtTarget)
+void ABasePawn::RotateTurret(FVector LookAtTarget, bool RotateBase = false)
 {
 	FVector VectorToTarget = LookAtTarget - TurretMesh->GetComponentLocation();
 	FRotator LookAtRotation = FRotator(0.0f, VectorToTarget.Rotation().Yaw, 0.0f);
@@ -33,6 +33,7 @@ void ABasePawn::RotateTurret(FVector LookAtTarget)
 	FRotator InterpolatedRotation = FMath::RInterpTo(TurretMesh->GetComponentRotation(), LookAtRotation, GetWorld()->GetDeltaSeconds(), 10.0f);
 
 	TurretMesh->SetWorldRotation(InterpolatedRotation);
+	if (RotateBase) BaseMesh->SetWorldRotation(InterpolatedRotation);
 }
 
 void ABasePawn::Fire()

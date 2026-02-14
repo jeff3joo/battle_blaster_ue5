@@ -5,7 +5,14 @@ Intermediate/
 Saved/
 .vs/
 
-# Visual Studio
+# Build results
+Build/
+
+# IDE files
 *.sln
-*.VC.db
-.vsconfig
+*.xcodeproj
+*.xcworkspace
+
+# OS junk
+.DS_Store
+Thumbs.db

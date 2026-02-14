@@ -38,9 +38,6 @@ public:
 
 	FTimerHandle CountdownTimerHandle;
 
-	bool IsVictory = false;
-	//int32 CurrentLevelIndex = 1;
-
 	ATank* Tank;
 	int32 TowerCount;
 

@@ -85,17 +85,13 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 		if (!DeadTower) return;
 		
 		DeadTower->HandleDestruction();
-		TowerCount--;
-		if (TowerCount == 0) {
-			IsGameOver = true;
-			IsVictory = true;
-		}
+		//Spawn a new tower after 5 seconds
 	}
 
 	if (IsGameOver)
 	{
 		ScreenMessageWidget->SetVisibility(ESlateVisibility::Visible);
-		FString GameOverString = IsVictory ? "Victory" : "Defeat";
+		FString GameOverString = "Defeat";
 		ScreenMessageWidget->SetMessage(GameOverString);
 
 		FTimerHandle GameOverTimeHandle;
@@ -111,12 +107,6 @@ void ABattleBlasterGameMode::OnGameOverTimerTimeout()
 	UBattleBlasterGameInstance* BattleBlasterGameInstance = Cast<UBattleBlasterGameInstance>(GameInstance);
 	if (!BattleBlasterGameInstance) return;
 
-	if (IsVictory) {
-		BattleBlasterGameInstance->LoadNextLevel();
-	} 
-	else
-	{
-		BattleBlasterGameInstance->RestartCurrentLevel();
-	}
+	BattleBlasterGameInstance->RestartGame();
 }
 

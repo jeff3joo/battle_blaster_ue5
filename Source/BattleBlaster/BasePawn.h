@@ -43,7 +43,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UCameraShakeBase> DeathCameraShakeClass;
 
-	void RotateTurret(FVector LookAtTarget);
+	void RotateTurret(FVector LookAtTarget, bool RotateBase);
 
 	void Fire();
 

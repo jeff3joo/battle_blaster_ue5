@@ -22,15 +22,24 @@ protected:
 
 private:
 	bool isInFireRange();
+	bool isPlayerInRange();
+	TArray<AActor*> IgnoredActors;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere)
-	float FireRange = 700.0f;
+	float FireRange = 500.0f;
+
+	UPROPERTY(EditAnywhere)
+	float PlayerRange = 1000.0f;
 
 	UPROPERTY(EditAnywhere)
 	float FireRate = 2.0f;
+
+	UPROPERTY(EditAnywhere)
+	float Speed = 100.0f;
 
 	ATank* Tank;
 
