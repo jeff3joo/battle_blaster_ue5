@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Tower.h"
 #include "BattleBlasterGameInstance.h"
+#include "Engine/World.h"
 
 void ABattleBlasterGameMode::BeginPlay()
 {
@@ -16,10 +17,6 @@ void ABattleBlasterGameMode::BeginPlay()
 	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	if (PlayerPawn) {
 		Tank = Cast<ATank>(PlayerPawn);
-		if (!Tank)
-		{
-			UE_LOG(LogTemp, Display, TEXT("GameMode:: Failed to Locate The Tank..."));
-		}
 	}
 
 	int32 LoopIndex = 0;
@@ -84,8 +81,37 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 		ATower* DeadTower = Cast<ATower>(DeadActor);
 		if (!DeadTower) return;
 		
+		// Capture spawn info BEFORE destruction
+		const FTransform SpawnTransform = DeadTower->GetActorTransform();
+		TSubclassOf<AActor> TowerToSpawnClass = DeadTower->GetClass();
+
 		DeadTower->HandleDestruction();
-		//Spawn a new tower after 5 seconds
+
+		// Spawn a new tower after 5 seconds at the same transform and of the same class
+		FTimerHandle RespawnHandle;
+		const float RespawnDelay = 5.0f;
+		FTimerDelegate RespawnDelegate = FTimerDelegate::CreateLambda([this, SpawnTransform, TowerToSpawnClass]()
+		{
+			if (!TowerToSpawnClass) return;
+
+			UWorld* World = GetWorld();
+			if (!World) return;
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+			AActor* NewActor = World->SpawnActor<AActor>(TowerToSpawnClass, SpawnTransform, SpawnParams);
+			if (NewActor)
+			{
+				ATower* NewTower = Cast<ATower>(NewActor);
+				if (NewTower)
+				{
+					NewTower->Tank = Tank;
+				}
+			}
+		});
+
+		GetWorldTimerManager().SetTimer(RespawnHandle, RespawnDelegate, RespawnDelay, false);
 	}
 
 	if (IsGameOver)

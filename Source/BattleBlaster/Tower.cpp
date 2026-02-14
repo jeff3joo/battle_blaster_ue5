@@ -122,7 +122,6 @@ void ATower::Tick(float DeltaTime)
 	RotateTurret(TargetLocation, true);
 
 	const float Distance = FVector::Dist(TowerLocation, TargetLocation);
-	UE_LOG(LogTemp, Display, TEXT("Distance to Tank: %f"), Distance);
 
 	if (Distance > FireRange)
 	{
