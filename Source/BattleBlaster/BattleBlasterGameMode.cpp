@@ -81,8 +81,17 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 		ATower* DeadTower = Cast<ATower>(DeadActor);
 		if (!DeadTower) return;
 		
-		// Capture spawn info BEFORE destruction
-		const FTransform SpawnTransform = DeadTower->GetActorTransform();
+		// Capture death location BEFORE destruction
+		const FVector DeathLocation = DeadTower->GetActorLocation();
+
+		// Get tower's canonical spawn transform (where it should appear by default)
+		FVector SpawnLocation;
+		FRotator SpawnRotation;
+		DeadTower->GetTowerSpawnLocationAndRotation(SpawnLocation, SpawnRotation);
+		//In SpawnLocation add 50.0f at Z to avoid Collision
+		SpawnLocation.Z += 50.0f;
+
+		const FTransform SpawnTransform(SpawnRotation, SpawnLocation);
 		TSubclassOf<AActor> TowerToSpawnClass = DeadTower->GetClass();
 
 		DeadTower->HandleDestruction();
@@ -90,23 +99,24 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 		// Spawn a new tower after 5 seconds at the same transform and of the same class
 		FTimerHandle RespawnHandle;
 		const float RespawnDelay = 5.0f;
-		FTimerDelegate RespawnDelegate = FTimerDelegate::CreateLambda([this, SpawnTransform, TowerToSpawnClass]()
+		FTimerDelegate RespawnDelegate = FTimerDelegate::CreateLambda([this, SpawnTransform, DeathLocation, TowerToSpawnClass]()
 		{
-			if (!TowerToSpawnClass) return;
-
 			UWorld* World = GetWorld();
 			if (!World) return;
 
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
+			
 			AActor* NewActor = World->SpawnActor<AActor>(TowerToSpawnClass, SpawnTransform, SpawnParams);
+
 			if (NewActor)
 			{
 				ATower* NewTower = Cast<ATower>(NewActor);
 				if (NewTower)
 				{
 					NewTower->Tank = Tank;
+					NewTower->SetLastDeathLocation(DeathLocation);
+					NewTower->SetRespawnTarget(DeathLocation);
 				}
 			}
 		});

@@ -10,6 +10,9 @@ void ATower::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Cache initial spawn transform so GameMode (or others) can request where this tower should spawn by default.
+	InitialSpawnTransform = GetActorTransform();
+
 	// Ensure the root component has collision enabled so sweeping actually blocks movement.
 	if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(GetRootComponent()))
 	{
@@ -43,13 +46,57 @@ bool ATower::isPlayerInRange()
 	return DistanceToTank <= PlayerRange;
 }
 
+void ATower::SetRespawnTarget(const FVector& Target)
+{
+	RespawnTargetLocation = Target;
+	bHasRespawnTarget = true;
+	bAtLastDeathLocation = false;
+	UE_LOG(LogTemp, Display, TEXT("Tower: Respawn target set to %s"), *RespawnTargetLocation.ToString());
+}
+
+void ATower::SetLastDeathLocation(const FVector& Location)
+{
+	LastDeathLocation = Location;
+	bHasLastDeathLocation = true;
+	// Keep last death info; this is used to return to post after chasing.
+}
+
+void ATower::GoToDeathLocation(float DeltaTime)
+{
+	if (bHasRespawnTarget)
+	{
+		const FVector Current = GetActorLocation();
+		const float Dist = FVector::Dist(Current, RespawnTargetLocation);
+
+		// If close enough, arrival complete.
+		if (Dist <= RespawnAcceptanceRadius)
+		{
+			bHasRespawnTarget = false;
+			bAtLastDeathLocation = true;
+			// Allow normal behavior next tick.
+		}
+		else
+		{
+			// Move toward respawn target with sweep so collisions are respected.
+			const FVector NewLocation = FMath::VInterpConstantTo(Current, RespawnTargetLocation, DeltaTime, Speed);
+			FHitResult SweepHit;
+			RotateTurret(NewLocation, true);
+			const bool bMoved = SetActorLocation(NewLocation, true, &SweepHit);
+			return;
+		}
+	}
+}
+
 void ATower::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (!Tank) return;
 
 	bool InSeenRange = isPlayerInRange();
-	if (!InSeenRange) return;
+	if (!InSeenRange) {
+		GoToDeathLocation(DeltaTime);
+		return;
+	}
 
 	const FVector TowerLocation = GetActorLocation();
 	// Aim at a point near the tank's center/eyes to avoid the trace ending inside the tank's root.
@@ -115,10 +162,12 @@ void ATower::Tick(float DeltaTime)
 
 	if (!bHasLineOfSight)
 	{
+		GoToDeathLocation(DeltaTime);
 		return;
 	}
-
 	// We can see the tank: rotate turret and attempt to move, but use a sweep and inspect sweep hit.
+	bHasRespawnTarget = false;
+	bAtLastDeathLocation = false;
 	RotateTurret(TargetLocation, true);
 
 	const float Distance = FVector::Dist(TowerLocation, TargetLocation);
@@ -144,4 +193,11 @@ void ATower::HandleDestruction()
 	Super::HandleDestruction();
 
 	Destroy();
+}
+
+void ATower::GetTowerSpawnLocationAndRotation(FVector& OutLocation, FRotator& OutRotation) const
+{
+	// Return the initial transform the tower had in the level (BeginPlay cached it).
+	OutLocation = InitialSpawnTransform.GetLocation();
+	OutRotation = InitialSpawnTransform.GetRotation().Rotator();
 }
