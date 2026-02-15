@@ -5,6 +5,7 @@
 #include "Tower.h"
 #include "BattleBlasterGameInstance.h"
 #include "Engine/World.h"
+#include "Health.h" // for direct access to the Health component
 
 void ABattleBlasterGameMode::BeginPlay()
 {
@@ -34,6 +35,14 @@ void ABattleBlasterGameMode::BeginPlay()
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (PlayerController)
 	{
+		GamePlayHUDWidget = CreateWidget<UGamePlayHUD>(PlayerController, GamePlayHUDWidgetClass);
+		if (GamePlayHUDWidget)
+		{
+			GamePlayHUDWidget->AddToViewport();
+			GamePlayHUDWidget->SetHealthBarPercent(1.0f);
+		}
+
+
 		ScreenMessageWidget = CreateWidget<UScreenMessage>(PlayerController, ScreenMessageClass);
 		if (ScreenMessageWidget) 
 		{
@@ -69,12 +78,15 @@ void ABattleBlasterGameMode::OnCountdownTimerTimeout()
 
 void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 {
-	bool IsGameOver = false;
-
 	if (DeadActor == Tank)
 	{
-		IsGameOver = true;
 		Tank->HandleDestruction();
+		ScreenMessageWidget->SetVisibility(ESlateVisibility::Visible);
+		FString GameOverString = "Defeat";
+		ScreenMessageWidget->SetMessage(GameOverString);
+
+		FTimerHandle GameOverTimeHandle;
+		GetWorldTimerManager().SetTimer(GameOverTimeHandle, this, &ABattleBlasterGameMode::OnGameOverTimerTimeout, GameOverTimer, false);
 	}
 	else 
 	{
@@ -95,6 +107,15 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 		TSubclassOf<AActor> TowerToSpawnClass = DeadTower->GetClass();
 
 		DeadTower->HandleDestruction();
+
+		// Reward player health for killing a tower (tunable value)
+		if (Tank)
+		{
+			if (UHealth* HealthComp = Tank->FindComponentByClass<UHealth>())
+			{
+				HealthComp->IncreaseHealth();
+			}
+		}
 
 		// Spawn a new tower after 5 seconds at the same transform and of the same class
 		FTimerHandle RespawnHandle;
@@ -122,16 +143,6 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 		});
 
 		GetWorldTimerManager().SetTimer(RespawnHandle, RespawnDelegate, RespawnDelay, false);
-	}
-
-	if (IsGameOver)
-	{
-		ScreenMessageWidget->SetVisibility(ESlateVisibility::Visible);
-		FString GameOverString = "Defeat";
-		ScreenMessageWidget->SetMessage(GameOverString);
-
-		FTimerHandle GameOverTimeHandle;
-		GetWorldTimerManager().SetTimer(GameOverTimeHandle, this, &ABattleBlasterGameMode::OnGameOverTimerTimeout, GameOverTimer, false);
 	}
 }
 

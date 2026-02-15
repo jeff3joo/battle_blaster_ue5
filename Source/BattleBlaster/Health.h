@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 
 #include "BattleBlasterGameMode.h"
+#include "Tank.h"
 
 #include "Health.generated.h"
 
@@ -36,6 +37,9 @@ public:
 	UFUNCTION()
 	void OnDamageTaken(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
-	ABattleBlasterGameMode* BattleBlasterGameMode;
+	void IncreaseHealth();
 
+	// Cached pointer to the GameMode to notify when actor dies
+	ABattleBlasterGameMode* BattleBlasterGameMode = nullptr;
+	ATank* Tank;
 };
