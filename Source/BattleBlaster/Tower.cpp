@@ -20,7 +20,6 @@ void ATower::BeginPlay()
 		{
 			Prim->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 			Prim->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-			UE_LOG(LogTemp, Warning, TEXT("Tower: Root collision was disabled, enabling QueryAndPhysics and blocking all channels."));
 		}
 	}
 
@@ -51,7 +50,6 @@ void ATower::SetRespawnTarget(const FVector& Target)
 	RespawnTargetLocation = Target;
 	bHasRespawnTarget = true;
 	bAtLastDeathLocation = false;
-	UE_LOG(LogTemp, Display, TEXT("Tower: Respawn target set to %s"), *RespawnTargetLocation.ToString());
 }
 
 void ATower::SetLastDeathLocation(const FVector& Location)
@@ -99,19 +97,16 @@ void ATower::Tick(float DeltaTime)
 	}
 
 	const FVector TowerLocation = GetActorLocation();
-	// Aim at a point near the tank's center/eyes to avoid the trace ending inside the tank's root.
-	const FVector TargetLocation = Tank->GetActorLocation();// +FVector(0.f, 0.f, 50.f);
+	const FVector TargetLocation = Tank->GetActorLocation();
 
-	// Robust line-of-sight: perform iterative traces and ignore non-physical blocking volumes (or other ignorable actors)
-	// until either we confirm the Tank is first, or a blocking actor that should stop visibility remains.
-	const float VisibilityTolerance = 100.0f; // tweak if necessary
+	const float VisibilityTolerance = 100.0f; 
 	bool bHasLineOfSight = false;
 
 	IgnoredActors.Add(this);
 
 
 	//Added For Loop to ignore BlockVolumes by adding to IgnoredActors
-	const int32 MaxIterations = 8;
+	const int32 MaxIterations = 4;
 	for (int32 Iter = 0; Iter < MaxIterations; ++Iter)
 	{
 		FHitResult Hit;
@@ -157,15 +152,11 @@ void ATower::Tick(float DeltaTime)
 		break;
 	}
 
-	// Debug visualization: green = visible, red = blocked
-	DrawDebugLine(GetWorld(), TowerLocation, TargetLocation, bHasLineOfSight ? FColor::Green : FColor::Red, false, 0.1f, 0, 2.0f);
-
 	if (!bHasLineOfSight)
 	{
 		GoToDeathLocation(DeltaTime);
 		return;
 	}
-	// We can see the tank: rotate turret and attempt to move, but use a sweep and inspect sweep hit.
 	bHasRespawnTarget = false;
 	bAtLastDeathLocation = false;
 	RotateTurret(TargetLocation, true);

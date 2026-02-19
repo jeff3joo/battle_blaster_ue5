@@ -3,7 +3,7 @@
 #include "Health.h"
 #include "BattleBlasterGameMode.h"
 #include "Kismet/GameplayStatics.h"
-#include "ScreenMessage.h" // for SetHealthBarPercent (ensure this header exists)
+#include "ScreenMessage.h"
 
 UHealth::UHealth()
 {

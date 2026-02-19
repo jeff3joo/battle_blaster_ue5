@@ -39,7 +39,6 @@ public:
 
 	void IncreaseHealth();
 
-	// Cached pointer to the GameMode to notify when actor dies
 	ABattleBlasterGameMode* BattleBlasterGameMode = nullptr;
 	ATank* Tank;
 };

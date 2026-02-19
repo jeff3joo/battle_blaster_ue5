@@ -96,11 +96,10 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 		// Capture death location BEFORE destruction
 		const FVector DeathLocation = DeadTower->GetActorLocation();
 
-		// Get tower's canonical spawn transform (where it should appear by default)
 		FVector SpawnLocation;
 		FRotator SpawnRotation;
 		DeadTower->GetTowerSpawnLocationAndRotation(SpawnLocation, SpawnRotation);
-		//In SpawnLocation add 50.0f at Z to avoid Collision
+		//In SpawnLocation add 50.0f at Z to avoid Collision and spawn above the ground
 		SpawnLocation.Z += 50.0f;
 
 		const FTransform SpawnTransform(SpawnRotation, SpawnLocation);
@@ -108,7 +107,6 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 
 		DeadTower->HandleDestruction();
 
-		// Reward player health for killing a tower (tunable value)
 		if (Tank)
 		{
 			if (UHealth* HealthComp = Tank->FindComponentByClass<UHealth>())
@@ -117,9 +115,9 @@ void ABattleBlasterGameMode::ActorDied(AActor* DeadActor)
 			}
 		}
 
-		// Spawn a new tower after 5 seconds at the same transform and of the same class
+		// Spawn a new tower after 4 seconds at the same transform and of the same class
 		FTimerHandle RespawnHandle;
-		const float RespawnDelay = 5.0f;
+		const float RespawnDelay = 4.0f;
 		FTimerDelegate RespawnDelegate = FTimerDelegate::CreateLambda([this, SpawnTransform, DeathLocation, TowerToSpawnClass]()
 		{
 			UWorld* World = GetWorld();
